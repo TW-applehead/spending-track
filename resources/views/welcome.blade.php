@@ -55,4 +55,6 @@
             {{ session('error') }}
         </div>
     @endif
+
+    <a href="{{ route('accounts.index') }}">帳戶</a>
 </x-app-layouts>
