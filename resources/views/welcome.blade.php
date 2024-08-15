@@ -1,9 +1,9 @@
 <x-app-layouts>
+    <div class="text-center mt-3">刷卡 (當月不會扣 所以要記)</div>
+    <div class="text-center mb-3">台新代付 (直接算在該帳戶)</div>
     <form action="{{ route('expense.store') }}" method="POST">
         @csrf
-        <div class="row mb-3">
-            <div class="col-12 text-center">刷卡 (當月不會扣 所以要記)</div>
-            <div class="col-12 text-center mb-3">台新代付 (直接算在該帳戶)</div>
+        <div class="row">
             <!-- 金額輸入框 -->
             <div class="form-group col-md-6">
                 <label for="amount">金額</label>
@@ -72,54 +72,63 @@
 
             <button type="submit" class="btn btn-primary mx-auto">儲存</button>
         </div>
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-success">
+                {{ session('error') }}
+            </div>
+        @endif
     </form>
-    @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-success">
-            {{ session('error') }}
-        </div>
-    @endif
 
-    <div class="row">
-        @foreach($accounts as $account)
-        <div class="col-md-6">
-            <table class="w-100">
-                <thead>
-                    <tr>
-                        <th>{{ $account->name }}帳戶</th>
-                        <th>代付</th>
-                        <th>說明</th>
-                        <th>動作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($account->expenses as $expense)
-                    <tr>
-                        <td style="color: {{ $expense->is_expense ? 'red' : 'green'}};">{{ $expense->amount }}</td>
-                        <td>{{ $expense->other_account == 0 ? '是' : '否' }}</td>
-                        <td>{{ $expense->notes }}</td>
-                        <td>
-                            <button class="btn btn-secondary">編輯</button>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+    <div class="bg-white shadow-sm rounded p-3 mt-5">
+        <select class="form-control w-auto mb-3" id="expense-tables-time" name="expense-tables-time">
+            @foreach($months as $month)
+                @if($month == now()->format('Ym'))
+                    <option value="{{ $month }}" selected>{{ $month }}</option>
+                @else
+                    <option value="{{ $month }}">{{ $month }}</option>
+                @endif
+            @endforeach
+        </select>
+        <div class="expense-tables">
+            <x-expense-tables :time="now()->format('Ym')" />
         </div>
-        @endforeach
-        @foreach($accounts as $account)
-        <div class="col-md-6 mt-3">
-            {{ $account->name }} : <span style="color: {{ $account->quota >= 0 ? 'green' : 'red' }};">{{ abs($account->quota) }}</span>
-            {{ $account->balance_difference ? '' : ' (尚無下個月餘額)' }}
-        </div>
-        @endforeach
     </div>
 
     <div class="row my-5">
         <a href="{{ route('accounts.index') }}">修改帳戶扣打</a>
     </div>
 </x-app-layouts>
+
+<script>
+    $(document).ready(function() {
+        $('#expense-tables-time').on('change', function() {
+            var selectedTime = $(this).val();
+
+            // 發送 AJAX 請求到指定的路由
+            $.ajax({
+                url: "{{ route('expense.tables') }}", // 請替換為你的實際路由名稱
+                method: 'GET',
+                data: {
+                    time: selectedTime
+                },
+                beforeSend : function(){
+                    $('.expense-tables').html('');
+                },
+                success: function(response) {
+                    // 處理成功的回應，更新顯示內容
+                    $('.expense-tables').append(response);
+                    console.log(response);
+                },
+                error: function(xhr, status, error) {
+                    // 處理錯誤
+                    console.error(error);
+                }
+            });
+        });
+    });
+</script>
