@@ -5,17 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Expense extends Model
+class AccountBalance extends Model
 {
     use HasFactory;
-
-    protected $fillable = [
-        'amount',
-        'account_id',
-        'is_expense',
-        'other_account',
-        'expense_time',
-    ];
 
     public function account()
     {

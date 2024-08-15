@@ -13,7 +13,7 @@
 
     </head>
     <body class="font-sans antialiased dark:bg-black dark:text-white/50">
-        <main class="containter">
+        <main class="container">
             {{ $slot }}
         </main>
     </body>
