@@ -1,7 +1,7 @@
 <div class="row">
     @foreach($accounts as $account)
     <div class="col-md-6 text-center">
-        <table class="w-75">
+        <table class="w-100 table shadow-sm">
             <thead>
                 <tr>
                     <th>{{ $account->name }}帳戶</th>
@@ -18,7 +18,7 @@
                     <td>{{ $expense->other_account == 0 ? '否' : '是' }}</td>
                     <td>{{ $expense->notes }}</td>
                     <td>
-                        <button class="btn btn-secondary">編輯</button>
+                        <button class="btn btn-dark btn-sm">編輯</button>
                     </td>
                 </tr>
                 @endforeach

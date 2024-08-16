@@ -37,15 +37,15 @@
             <div class="form-group col-md-6">
                 <label>是否為其他帳戶代付？</label><br>
                 <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="other_account" id="is_not_other_account" value="0" checked>
+                    <input class="form-check-input" type="radio" name="other_account" id="is-not-other-account" value="0" checked>
                     <label class="form-check-label" for="is_not_other_account">否</label>
                 </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="other_account" id="is_food_account" value="1">
+                <div class="form-check form-check-inline is-food-account" style="display: none">
+                    <input class="form-check-input" type="radio" name="other_account" id="is-food-account" value="1">
                     <label class="form-check-label" for="is_food_account">是，飲食代付</label>
                 </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="other_account" id="is_entertain_account" value="2">
+                <div class="form-check form-check-inline is-entertain-account">
+                    <input class="form-check-input" type="radio" name="other_account" id="is-entertain-account" value="2">
                     <label class="form-check-label" for="is_entertain_account">是，娛樂代付</label>
                 </div>
             </div>
@@ -106,8 +106,19 @@
 
 <script>
     $(document).ready(function() {
+        $('#account').on('change', function() {
+            let account = $(this).val();
+            if (account == 1) {
+                $('.is-food-account').hide();
+                $('.is-entertain-account').show();
+            } else if (account == 2)  {
+                $('.is-food-account').show();
+                $('.is-entertain-account').hide();
+            }
+        });
+
         $('#expense-tables-time').on('change', function() {
-            var selectedTime = $(this).val();
+            let selectedTime = $(this).val();
 
             // 發送 AJAX 請求到指定的路由
             $.ajax({
