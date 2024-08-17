@@ -77,9 +77,9 @@ class ExpenseTables extends Component
             }
 
             if ($account->id == 1) {
-                $account->quota = $balance_difference - $income_sum - $expense_sum + $food_behalf_sum - $entertain_behalf_sum;
+                $account->quota = $balance_difference + $income_sum - $expense_sum + $food_behalf_sum - $entertain_behalf_sum;
             } else {
-                $account->quota = $balance_difference - $income_sum - $expense_sum - $food_behalf_sum + $entertain_behalf_sum;
+                $account->quota = $balance_difference + $income_sum - $expense_sum - $food_behalf_sum + $entertain_behalf_sum;
             }
             return $account;
         });
