@@ -47,6 +47,26 @@ class ExpenseController extends Controller
         return redirect()->back()->with('success', '花費已成功儲存');
     }
 
+    public function update(Request $request)
+    {
+        $expense = Expense::find($request->id);
+        $expense->amount = $request->amount;
+        $expense->is_expense = $request->is_expense;
+        $expense->other_account = $request->other_account;
+        $expense->notes = $request->notes;
+        $expense->updated_at = now();
+        $expense->save();
+
+        return response()->json(['status' => 'success', 'response' => '花費更新成功']);
+    }
+
+    public function delete(Request $request)
+    {
+        Expense::find($request->id)->delete();
+
+        return response()->json(['status' => 'success', 'response' => '刪除成功']);
+    }
+
     public function getExpenseTable(Request $request)
     {
         $time = $request->time;

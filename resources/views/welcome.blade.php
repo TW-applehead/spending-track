@@ -52,7 +52,7 @@
 
             <!-- 時間 -->
             <div class="form-group col-md-6">
-                <label for="account">時間</label>
+                <label for="expense_time">時間</label>
                 <select class="form-control" id="time" name="expense_time" required>
                     @foreach($months as $month)
                         @if($month == now()->format('Ym'))
@@ -120,9 +120,8 @@
         $('#expense-tables-time').on('change', function() {
             let selectedTime = $(this).val();
 
-            // 發送 AJAX 請求到指定的路由
             $.ajax({
-                url: "{{ route('expense.tables') }}", // 請替換為你的實際路由名稱
+                url: "{{ route('expense.tables') }}",
                 method: 'GET',
                 data: {
                     time: selectedTime
@@ -131,13 +130,10 @@
                     $('.expense-tables').html('');
                 },
                 success: function(response) {
-                    // 處理成功的回應，更新顯示內容
                     $('.expense-tables').append(response);
-                    console.log(response);
                 },
-                error: function(xhr, status, error) {
-                    // 處理錯誤
-                    console.error(error);
+                error: function(errors) {
+                    console.error(errors.responseJSON.message);
                 }
             });
         });
