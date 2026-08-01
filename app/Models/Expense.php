@@ -15,6 +15,7 @@ class Expense extends Model
         'is_expense',
         'other_account',
         'expense_time',
+        'notes',
     ];
 
     public function account()

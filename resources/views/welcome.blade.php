@@ -1,6 +1,22 @@
 <x-app-layouts>
-    <div class="text-center mt-3">刷卡 (當月不會扣 所以要記)</div>
-    <div class="text-center mb-3">台新代付 (直接算在該帳戶)</div>
+    @if(session('success'))
+        <div class="alert alert-success my-3">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger my-3">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <div class="text-center fs-3 fw-bold mt-3">記帳系統 2.0</div>
+    <div class="text-end mb-3">
+        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">
+            匯入信用卡帳單
+        </button>
+    </div>
+
     <form action="{{ route('expense.store') }}" method="POST">
         @csrf
         <div class="row">
@@ -70,18 +86,10 @@
                 <input type="text" class="form-control" id="notes" name="notes">
             </div>
 
-            <button type="submit" class="btn btn-primary mx-auto">儲存</button>
+            <div class="text-center my-3">
+                <button type="submit" class="btn btn-primary mx-auto">儲存</button>
+            </div>
         </div>
-        @if(session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-success">
-                {{ session('error') }}
-            </div>
-        @endif
     </form>
 
     <div class="bg-white shadow-sm rounded p-3 mt-5">
@@ -101,6 +109,31 @@
 
     <div class="row my-5">
         <a href="{{ route('accounts.index') }}">修改帳戶扣打</a>
+    </div>
+
+    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form action="{{ route('expense.import') }}" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="importModalLabel">匯入信用卡帳單</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="billText" class="form-label">請將帳單內容貼於下方文字方塊：</label>
+                            <textarea class="form-control" id="billText" name="text" rows="12" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">匯入</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
     </div>
 </x-app-layouts>
 

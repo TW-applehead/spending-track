@@ -78,4 +78,95 @@ class ExpenseController extends Controller
         // 返回渲染後的視圖
         return $view;
     }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'text' => 'required'
+        ]);
+
+        $text = str_replace("\r", "", $request->text);
+        $lines = explode("\n", $text);
+
+        // 1. 清理雜訊 & 處理跨行斷行問題
+        $mergedLines = [];
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+
+            // 判斷是否為消費開頭 (日期格式：兩位或三位民國年/月/日)
+            if (preg_match('/^\d{2,3}\/\d{2}\/\d{2}/', $line)) {
+                $mergedLines[] = $line;
+            } else {
+                // 只有當上一行「真的是消費紀錄」且「這行不是系統注意事項雜訊」時才合併
+                if (!empty($mergedLines)) {
+                    $lastIndex = count($mergedLines) - 1;
+
+                    // 過濾掉信用卡條款、繳款說明等雜訊（以 *、◎、說明 等開頭的行）
+                    if (!preg_match('/^[\*◎]|若您要|自動提款/', $line)) {
+                        $mergedLines[$lastIndex] .= ' ' . $line;
+                    }
+                }
+            }
+        }
+
+        $count = 0;
+        foreach ($mergedLines as $line) {
+            // 正則表達式解析說明：
+            // Group 1: 消費日期 (例: 115/06/09)
+            // Group 2: 入帳日期 (例: 115/06/11)
+            // Group 3: 說明 + 金額部分
+            if (preg_match('/^(\d{2,3}\/\d{2}\/\d{2})\s+(\d{2,3}\/\d{2}\/\d{2})\s+(.+)$/', $line, $match)) {
+                $consumeDate = $match[1]; // 消費日期
+                $rawContent  = trim($match[3]); // 說明 + 後續所有金額字串
+                $notes = '';
+                $amount = 0;
+
+                // 【情況 A】：國外交易服務費 (例如：國外交易服務費-290.00 4)
+                if (preg_match('/^(國外交易服務費.*?)\s*(-?[\d\.,]+)$/', $rawContent, $subMatch)) {
+                    $notes  = $subMatch[1];
+                    $amount = $subMatch[2];
+                }
+                // 【情況 B】：外幣消費 (例如：LAWSONTOKYO 290 0611 JP JPY 1,467.00)
+                // 抓取最後面的台幣換算金額 (例: 1,467.00)
+                elseif (preg_match('/^(.*?)\s+[\d\.,]+\s+\d{4}\s+[A-Z]{2}\s+[A-Z]{3}\s+(-?[\d\.,]+)$/', $rawContent, $subMatch)) {
+                    $notes  = $subMatch[1];
+                    $amount = $subMatch[2];
+                }
+                // 【情況 C】：一般國內消費 (例如：連加*連加*統一超商TAIPEI 119 TW 或無 TW 結尾)
+                // 抓取倒數第一個數字做為金額
+                elseif (preg_match('/^(.*?)\s+(-?[\d,]+)(?:\s+TW)?$/', $rawContent, $subMatch)) {
+                    $notes  = $subMatch[1];
+                    $amount = $subMatch[2];
+                }
+
+                // 如果成功拆解出金額與備註，才寫入資料庫
+                if ($notes !== '' && $amount !== 0) {
+                    // 轉換民國年為西元年 (例如 115/06/09 -> 2026-06-09)
+                    $dateParts = explode('/', $consumeDate);
+                    $year  = (int)$dateParts[0] + 1911;
+                    $month = $dateParts[1];
+                    // $day   = $dateParts[2];
+
+                    // 格式化金額 (去掉逗號，並轉為整數或浮點數)
+                    $cleanAmount = abs((float)str_replace(',', '', $amount));
+
+                    Expense::create([
+                        'amount'        => $cleanAmount,
+                        'account_id'    => 1,
+                        'is_expense'    => 1,
+                        'other_account' => 0,
+                        'expense_time'  => $year . $month,
+                        'notes'         => $notes,
+                    ]);
+
+                    $count++;
+                }
+            }
+        }
+
+        return back()->with('success', "成功匯入 {$count} 筆資料");
+    }
 }
