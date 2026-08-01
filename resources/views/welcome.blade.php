@@ -10,7 +10,7 @@
         </div>
     @endif
 
-    <div class="text-center fs-3 fw-bold mt-3">記帳系統 2.0</div>
+    <div class="text-center fs-3 fw-bold my-3">記帳系統 2.0</div>
     <div class="text-end mb-3">
         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">
             匯入信用卡帳單
@@ -93,15 +93,15 @@
     </form>
 
     <div class="bg-white shadow-sm rounded p-3 mt-5">
-        <select class="form-control w-auto mb-3" id="expense-tables-time" name="expense-tables-time">
-            @foreach($months as $month)
-                @if($month == now()->format('Ym'))
-                    <option value="{{ $month }}" selected>{{ $month }}</option>
-                @else
-                    <option value="{{ $month }}">{{ $month }}</option>
-                @endif
-            @endforeach
-        </select>
+        <input
+            type="text"
+            class="form-control w-auto mb-3"
+            id="expense-tables-time"
+            name="expense-tables-time"
+            value="{{ request('expense-tables-time', now()->format('Ym')) }}"
+            placeholder="YYYYMM"
+            maxlength="6"
+        >
         <div class="expense-tables">
             <x-expense-tables :time="now()->format('Ym')" />
         </div>

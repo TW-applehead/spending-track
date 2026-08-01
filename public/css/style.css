@@ -1,3 +1,13 @@
 html body{
     background-color: #EEEEEE;
 }
+
+.expense-tables table {
+    table-layout: fixed;
+    width: 100%;
+}
+.expense-tables .notes-div {
+    width: 50%;
+    word-break: break-all;
+    overflow-wrap: break-word;
+}
