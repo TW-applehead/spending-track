@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Expense;
 use App\Models\Account;
 use App\View\Components\ExpenseTables;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ExpenseController extends Controller
 {
@@ -144,29 +146,164 @@ class ExpenseController extends Controller
 
                 // 如果成功拆解出金額與備註，才寫入資料庫
                 if ($notes !== '' && $amount !== 0) {
-                    // 轉換民國年為西元年 (例如 115/06/09 -> 2026-06-09)
                     $dateParts = explode('/', $consumeDate);
                     $year  = (int)$dateParts[0] + 1911;
                     $month = $dateParts[1];
-                    // $day   = $dateParts[2];
-
-                    // 格式化金額 (去掉逗號，並轉為整數或浮點數)
                     $cleanAmount = abs((float)str_replace(',', '', $amount));
 
-                    Expense::create([
-                        'amount'        => $cleanAmount,
-                        'account_id'    => 1,
-                        'is_expense'    => 1,
-                        'other_account' => 0,
-                        'expense_time'  => $year . $month,
-                        'notes'         => $notes,
-                    ]);
+                    // 將解析出來的資料存入暫存陣列
+                    $parsedExpenses[] = [
+                        'amount'       => $cleanAmount,
+                        'expense_time' => $year . $month,
+                        'notes'        => $notes,
+                    ];
 
-                    $count++;
+                    // 收集純文字說明供 OpenAI 辨識
+                    $notesList[] = $notes;
                 }
             }
         }
 
+        // 如果沒有解析出任何資料，直接返回
+        if (empty($parsedExpenses)) {
+            return back()->with('error', '未解析出任何有效帳單資料');
+        }
+
+        // 【第二階段】呼叫 OpenAI API 批次分類
+        $foodClassifications = $this->classifyNotesWithAi($notesList);
+
+        $count = 0;
+
+        // 【第三階段】結合 AI 判斷結果，寫入資料庫
+        foreach ($parsedExpenses as $index => $item) {
+            // 取得 AI 的判斷結果 (預設為 false，以防 API 回傳比對失敗)
+            $isFood = $foodClassifications[$index] ?? false;
+
+            Expense::create([
+                'amount'        => $item['amount'],
+                'account_id'    => $isFood ? 1 : 2, // 飲食類為 1，非飲食類為 2
+                'is_expense'    => 1,
+                'other_account' => 0,
+                'expense_time'  => $item['expense_time'],
+                'notes'         => $item['notes'],
+            ]);
+
+            $count++;
+        }
+
         return back()->with('success', "成功匯入 {$count} 筆資料");
+    }
+
+    private function classifyNotesWithAi(array $notesList): array
+    {
+        $finalResults = [];
+        $aiPendingList = [];
+
+        // 先由 PHP 關鍵字「硬性規則」預過濾再丟給 AI 分類
+        foreach ($notesList as $index => $note) {
+            if (preg_match('/(服務費|手續費|交易費|國外交易|跨行|捷運)/u', $note)) {
+                $finalResults[$index] = false;
+            }
+            elseif (preg_match('/(統一超商|美食|早餐)/u', $note)) {
+                $finalResults[$index] = true;
+            }
+            else {
+                // PHP 搞不定的店名、品牌、日文拼音等，放入 AI 待處理清單
+                $aiPendingList[$index] = $note;
+            }
+        }
+        // 如果所有項目都被 PHP 規則分類完畢，直接回傳結果，完全不用呼叫 API！
+        if (empty($aiPendingList)) {
+            ksort($finalResults);
+            return array_values($finalResults);
+        }
+
+        $apiKey = config('api.groq.secret_key');
+
+        // 如果未設定 API Key，全部預設回傳 false (account_id = 2)
+        if (!$apiKey) {
+            Log::warning('GROQ_API_KEY 未設定，待分類項目將自動補預設值 false');
+
+            foreach ($aiPendingList as $index => $note) {
+                $finalResults[$index] = false;
+            }
+
+            ksort($finalResults);
+            return array_values($finalResults);
+        }
+
+        try {
+            // 1. 將陣列轉成清單，加上編號，讓 AI 更好對應與理解
+            $itemsText = "";
+            $pendingOriginalKeys = array_keys($aiPendingList); // 保存原本的索引號碼
+            foreach ($pendingOriginalKeys as $i => $originalIndex) {
+                $itemsText .= ($i + 1) . ". " . $aiPendingList[$originalIndex] . "\n";
+            }
+
+            // 2. 重新調整 Prompt，加上明確規範與範例 (Few-shot learning)
+            $systemPrompt = "你是一個專業的記帳分類助手。你的唯一任務是判斷消費說明是否為「飲食類」。
+
+【判定規則】
+1. 飲食類 (true)：嚴格確認說明中的詞彙為何，任何為餐廳名稱、連鎖超商名稱、食物名稱、外送餐點服務、連鎖餐飲名稱等，皆給予 true。
+2. 非飲食類 (false)：嚴格確認說明中的詞彙為何，任何交易服務費、手續費、日用品名稱、交通、娛樂、服飾、商場店名等，皆給予 false。
+3. 警告：請特別注意！說明中只要包含『服務費』、『手續費』等金融關鍵字，無論前面接什麼字詞，都絕對不是飲食類，請強制給予 false。
+4. 警告：請特別注意！嚴格依照下方範例做分類，若說明中的詞彙無法確定是什麼，請強制給予 false。
+
+【規則範例】
+- 「早餐店」 -> true
+- 「捷運」 -> false
+- 「AEON」 -> false
+- 「麵屋」 -> true
+- 「商場」 -> false
+- 「火鍋店」 -> true
+- 「brunch」 -> true
+- 「廚房」 -> true
+
+【輸出格式】
+必須嚴格回傳 JSON 物件，格式如：{\"results\": [true, false, false...]}
+回傳陣列長度與順序必須與輸入清單數量完全一致。不要附加任何其他說明文字。";
+
+        $userPrompt = "請分析以下清單（共 " . count($aiPendingList) . " 筆）：\n{$itemsText}";
+
+        $response = Http::withToken($apiKey)
+            ->timeout(10)
+            ->post(config('api.groq.base_url'), [
+                'model' => 'llama-3.3-70b-versatile',
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $userPrompt]
+                ],
+                // 關鍵設定 1：設定溫度為 0，確保回應完全穩定不隨機
+                'temperature' => 0.0,
+                // 關鍵設定 2：強制使用 JSON 格式
+                'response_format' => ['type' => 'json_object']
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $rawContent = $data['choices'][0]['message']['content'] ?? '{}';
+                $content = json_decode($rawContent, true);
+
+                $aiResults = $content['results'] ?? [];
+
+                // 把 AI 的判斷結果對應回原本的索引位置
+                foreach ($pendingOriginalKeys as $i => $originalIndex) {
+                    $finalResults[$originalIndex] = $aiResults[$i] ?? false;
+                }
+            } else {
+                Log::error('Groq API Error: ' . $response->body());
+            }
+        } catch (\Exception $e) {
+            Log::error('Groq API Exception: ' . $e->getMessage());
+        }
+
+        for ($i = 0; $i < count($notesList); $i++) {
+            if (!isset($finalResults[$i])) {
+                $finalResults[$i] = false; // 防護機制：若有遺漏預設為 false
+            }
+        }
+        ksort($finalResults);
+
+        return array_values($finalResults);
     }
 }

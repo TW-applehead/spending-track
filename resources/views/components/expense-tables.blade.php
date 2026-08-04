@@ -1,11 +1,11 @@
 <div class="row expense-tables">
     @foreach($accounts as $account)
-    <div class="col-12 col-lg-6 text-center">
+    <div class="col-12 col-lg-6 p-0 text-center">
         {{ $account->name }}帳戶
-        <table class="w-100 table shadow-sm">
+        <table class="w-100 table table-striped">
             <thead>
                 <tr>
-                    <th class="text-start">金額</th>
+                    <th style="width: 85px;" class="text-start">金額</th>
                     <th class="text-start notes-div">說明</th>
                     <th>動作</th>
                 </tr>
@@ -14,11 +14,11 @@
                 @if(count($account->expenses) > 0)
                     @foreach ($account->expenses as $expense)
                     <tr>
-                        <td class="text-start" style="color: {{ $expense->is_expense ? 'red' : 'green'}};">${{ number_format($expense->amount) }}</td>
+                        <td class="text-start align-content-center" style="color: {{ $expense->is_expense ? 'red' : 'green'}};">${{ number_format($expense->amount) }}</td>
                         <td class="text-start notes-div">
                             <div>{{ $expense->notes }}</div>
                         </td>
-                        <td>
+                        <td class="align-content-center">
                             <button class="btn btn-dark btn-sm btn-edit-record" data-target="#record-modal" data-toggle="modal" data-account-id="{{ $account->id }}"
                                     data-id="{{ $expense->id }}" data-amount="{{ $expense->amount }}" data-other-account="{{ $expense->other_account }}" data-is-expense="{{ $expense->is_expense }}" data-notes="{{ $expense->notes }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
