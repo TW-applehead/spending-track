@@ -52,6 +52,7 @@ class ExpenseController extends Controller
     public function update(Request $request)
     {
         $expense = Expense::find($request->id);
+        $expense->account_id = $request->input('account_id');
         $expense->amount = $request->amount;
         $expense->is_expense = $request->is_expense;
         $expense->other_account = $request->other_account;

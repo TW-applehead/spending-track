@@ -51,14 +51,12 @@
     </div>
     @endforeach
 
-    <div id="record-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true" style="display: none;">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+    <div id="record-modal" class="modal fade" tabindex="-1" aria-labelledby="recordModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalCenterTitle">編輯紀錄</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <h5 class="modal-title" id="recordModalLabel">編輯紀錄</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="editForm">
@@ -67,32 +65,47 @@
                             <label for="editAmount" class="form-label">金額</label>
                             <input type="number" class="form-control" id="editAmount" name="amount">
                         </div>
-                        <div class="mb-3 d-flex">
-                            <label class="form-label">是否為代付</label>
-                            <div class="mx-3 otherAccountNo">
-                                <input type="radio" id="otherAccountNo" name="other_account" value="0">
-                                <label for="otherAccountNo">否</label>
+
+                        <div class="mb-3">
+                            <label class="form-label d-block">帳戶</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="account1" name="account_id" value="1">
+                                <label class="form-check-label" for="account1">飲食</label>
                             </div>
-                            <div class="mx-3 otherAccountYes1">
-                                <input type="radio" id="otherAccountYes1" name="other_account" value="1">
-                                <label for="otherAccountYes1">是 (飲食代付)</label>
-                            </div>
-                            <div class="mx-3 otherAccountYes2">
-                                <input type="radio" id="otherAccountYes2" name="other_account" value="2">
-                                <label for="otherAccountYes2">是 (娛樂代付)</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="account2" name="account_id" value="2">
+                                <label class="form-check-label" for="account2">娛樂</label>
                             </div>
                         </div>
-                        <div class="mb-3 d-flex">
-                            <label class="form-label">是否為費用</label>
-                            <div class="mx-3">
-                                <input type="radio" id="isExpenseYes" name="is_expense" value="1">
-                                <label for="isExpenseYes">是</label>
+
+                        <div class="mb-3">
+                            <label class="form-label d-block">是否為代付</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="otherAccountNo" name="other_account" value="0">
+                                <label class="form-check-label" for="otherAccountNo">否</label>
                             </div>
-                            <div class="mx-3">
-                                <input type="radio" id="isExpenseNo" name="is_expense" value="0">
-                                <label for="isExpenseNo">否</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="otherAccountYes1" name="other_account" value="1">
+                                <label class="form-check-label" for="otherAccountYes1">是 (飲食代付)</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="otherAccountYes2" name="other_account" value="2">
+                                <label class="form-check-label" for="otherAccountYes2">是 (娛樂代付)</label>
                             </div>
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label d-block">是否為費用</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="isExpenseYes" name="is_expense" value="1">
+                                <label class="form-check-label" for="isExpenseYes">是</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="isExpenseNo" name="is_expense" value="0">
+                                <label class="form-check-label" for="isExpenseNo">否</label>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label for="editNotes" class="form-label">說明</label>
                             <input type="text" class="form-control" id="editNotes" name="notes">
@@ -102,7 +115,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" id="saveChanges">儲存</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
                 </div>
             </div>
         </div>
@@ -123,12 +136,13 @@ $(document).ready(function() {
         $('#expenseId').val(id);
         $('#editAmount').val(amount);
         $('#editNotes').val(notes);
+        $('input[name="account_id"][value="' + accountId + '"]').prop('checked', true);
         $('input[name="other_account"][value="' + otherAccount + '"]').prop('checked', true);
         $('input[name="is_expense"][value="' + isExpense + '"]').prop('checked', true);
         $('div[class*="otherAccount"]').show();
         $('.otherAccountYes' + accountId).hide();
 
-        $('#editModal').modal('show');
+        $('#record-modal').modal('show');
     });
 
     $('.btn-del-record').on('click', function() {
