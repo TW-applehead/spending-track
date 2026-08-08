@@ -307,4 +307,84 @@ class ExpenseController extends Controller
 
         return array_values($finalResults);
     }
+
+    public function quickStore(Request $request)
+    {
+        $request->validate([
+            'account_id' => 'required|integer|exists:accounts,id',
+            'raw_text'   => 'required|string|max:255',
+        ]);
+
+        $parsedData = $this->parseTextWithGroq($request->raw_text);
+
+        if (!$parsedData || !isset($parsedData['amount'])) {
+            return back()->with('error', '無法從輸入文字中解析出金額，請確認輸入內容（如：午餐120）');
+        }
+
+        Expense::create([
+            'amount'        => $parsedData['amount'],
+            'account_id'    => $request->account_id,
+            'is_expense'    => 1,
+            'other_account' => $parsedData['other_account'] ?? 0,
+            'expense_time'  => now()->format('Ym'),
+            'notes'         => $parsedData['notes'] ?? $request->raw_text,
+        ]);
+
+        return back()->with('success', '成功新增消費紀錄！');
+    }
+
+    /**
+     * 呼叫 Groq 拆解【金額】與【說明】
+     */
+    private function parseTextWithGroq(string $rawText): ?array
+    {
+        $apiKey = config('api.groq.secret_key');
+
+        if (!$apiKey) {
+            Log::warning('GROQ_API_KEY 未設定');
+            return null;
+        }
+
+        try {
+            $systemPrompt = "你是一個精準的記帳助手。請分析使用者輸入的一段消費文字，將其拆解出【金額】與【說明/名稱】。
+
+【提取規範】
+1. amount: 消費金額，必須為純整數數字 (例如: 120)。
+2. notes: 消費說明/店家/品名，去除去金額後的乾淨名稱 (例如: '午餐麥當勞')。
+3. other_account: 預設填 0。若是飲食代付填 1，若是娛樂代付填 2。
+
+【輸出格式】
+必須嚴格僅回傳 JSON 物件：
+{
+    \"amount\": 120,
+    \"notes\": \"午餐麥當勞\",
+    \"other_account\": 0
+}
+若無法找到金額，請回傳 null。不要包含額外文字或 Markdown 標籤。";
+
+            $response = Http::withToken($apiKey)
+                ->timeout(10)
+                ->post(config('api.groq.base_url'), [
+                    'model' => 'llama-3.3-70b-versatile',
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => "待分析文字：" . $rawText]
+                    ],
+                    'temperature' => 0.0,
+                    'response_format' => ['type' => 'json_object']
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $rawContent = $data['choices'][0]['message']['content'] ?? '{}';
+                return json_decode($rawContent, true);
+            } else {
+                Log::error('Groq API Error: ' . $response->body());
+            }
+        } catch (\Exception $e) {
+            Log::error('Groq API Exception: ' . $e->getMessage());
+        }
+
+        return null;
+    }
 }

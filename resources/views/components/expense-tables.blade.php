@@ -1,7 +1,16 @@
 <div class="row expense-tables">
     @foreach($accounts as $account)
     <div class="col-12 col-lg-6 p-0 text-center">
-        {{ $account->name }}帳戶
+        <div class="position-relative d-flex justify-content-center align-items-center py-2 rounded-top">
+            <div class="fw-bold">{{ $account->name }}帳戶</div>
+            <button type="button" class="btn btn-secondary btn-sm position-absolute end-0 me-2 btn-quick-input"
+                    data-bs-toggle="modal"
+                    data-bs-target="#wordsModal"
+                    data-account-id="{{ $account->id }}"
+                    data-account-name="{{ $account->name }}">
+                快速輸入
+            </button>
+        </div>
         <table class="w-100 table table-striped">
             <thead>
                 <tr>
@@ -120,6 +129,32 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="wordsModal" tabindex="-1" aria-labelledby="wordsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{{ route('expense.quick-store') }}" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="wordsModalLabel">快速輸入 - <span id="targetAccountName" class="text-primary fw-bold"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- 隱藏欄位：儲存當前的帳戶 ID -->
+                        <input type="hidden" name="account_id" id="quickAccountId">
+
+                        <div class="mb-3">
+                            <textarea class="form-control" id="quickRawText" name="raw_text" rows="3" placeholder="例如：午餐麥當勞 180、遊戲王 $1000" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">新增</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -143,6 +178,16 @@ $(document).ready(function() {
         $('.otherAccountYes' + accountId).hide();
 
         $('#record-modal').modal('show');
+    });
+
+    $('.btn-quick-input').on('click', function() {
+        let accountId = $(this).data('account-id');
+        let accountName = $(this).data('account-name');
+
+        $('#quickAccountId').val(accountId);
+        $('#targetAccountName').text(accountName + '帳戶');
+
+        $('#wordsModal').modal('show');
     });
 
     $('.btn-del-record').on('click', function() {
