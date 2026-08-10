@@ -6,6 +6,7 @@ use App\Models\Expense;
 use App\Models\Account;
 use App\View\Components\ExpenseTables;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -317,20 +318,48 @@ class ExpenseController extends Controller
 
         $parsedData = $this->parseTextWithGroq($request->raw_text);
 
-        if (!$parsedData || !isset($parsedData['amount'])) {
+        if (empty($parsedData)) {
             return back()->with('error', '無法從輸入文字中解析出金額，請確認輸入內容（如：午餐120）');
         }
 
-        Expense::create([
-            'amount'        => $parsedData['amount'],
-            'account_id'    => $request->account_id,
-            'is_expense'    => 1,
-            'other_account' => $parsedData['other_account'] ?? 0,
-            'expense_time'  => now()->format('Ym'),
-            'notes'         => $parsedData['notes'] ?? $request->raw_text,
-        ]);
+        DB::transaction(function () use ($parsedData, $request) {
+            $firstExpenseId = null;
 
-        return back()->with('success', '成功新增消費紀錄！');
+            foreach ($parsedData as $item) {
+                $expense = Expense::create([
+                    'amount'        => $item['amount'],
+                    'payer_id'      => $item['payer_id'] ?? 1,
+                    'consumer_id'   => $item['consumer_id'] ?? 1,
+                    'account_id'    => $request->account_id,
+                    'is_expense'    => 1,
+                    'other_account' => 0,
+                    'expense_time'  => now()->format('Ym'),
+                    'notes'         => $item['notes'] ?? $request->raw_text,
+                ]);
+
+                // 判斷是否需要處理 split_group_id
+                if (!empty($item['is_split'])) {
+                    if ($firstExpenseId === null) {
+                        // 該組拆分的第一筆：記錄自己的 ID，並更新回自己的 split_group_id
+                        $firstExpenseId = $expense->id;
+                        $expense->update(['split_group_id' => $firstExpenseId]);
+                    } else {
+                        // 該組拆分的後續筆數：直接綁定第一筆的 ID
+                        $expense->update(['split_group_id' => $firstExpenseId]);
+                    }
+                }
+            }
+        });
+
+        $success_message = '成功新增消費紀錄！';
+        if (count($parsedData) > 1 && !empty($parsedData[0]['is_split'])) {
+            $amounts = array_column($parsedData, 'amount');
+            $totalAmount = array_sum($amounts);
+            $amountStr = implode(" 與 $", $amounts);
+            $success_message .= "（總金額 $" . $totalAmount . " 拆分為 $" . $amountStr . ")";
+        }
+
+        return back()->with('success', $success_message);
     }
 
     /**
@@ -346,21 +375,49 @@ class ExpenseController extends Controller
         }
 
         try {
-            $systemPrompt = "你是一個精準的記帳助手。請分析使用者輸入的一段消費文字，將其拆解出【金額】與【說明/名稱】。
+            $systemPrompt = "你是一個精準的記帳拆分助手。請分析使用者輸入的消費文字，將其拆解為資料庫紀錄。
 
-【提取規範】
-1. amount: 消費金額，必須為純整數數字 (例如: 120)。
-2. notes: 消費說明/店家/品名，去除去金額後的乾淨名稱 (例如: '午餐麥當勞')。
-3. other_account: 預設填 0。若是飲食代付填 1，若是娛樂代付填 2。
+【人物與 ID 對應】
+- 「我」或省略主詞的預設使用者 = ID: 1
+- 「老婆」或任何非「我」的人物 = ID: 2
+
+【拆分與付款邏輯】
+1. 一般個人消費（如：「午餐麥當勞 120」）：
+    - 產生 1 筆紀錄。
+    - amount: 120, payer_id: 1, consumer_id: 1, is_split: false
+
+2. 平分/共同消費/老婆代付（如：「午餐麥當勞 120，老婆代付」或「被代付」）：
+    - 拆分為 2 筆紀錄，且兩筆的 is_split 皆為 true。
+    - 誰付錢：若是「老婆付/老婆代付」，兩筆的 payer_id 都是 2；若是強調「我付的/我出的」，或是只說了「平分/一起付」而根本沒說是誰出的，兩筆的 payer_id 都是 1。
+    - 算誰的：一筆 consumer_id 為 1（我），另一筆 consumer_id 為 2（老婆）。
+
+3. 金額無法整除規則（如：總額 35 元）：
+    - 多出來的 1 元必須分配給 consumer_id = 1（我）。
+    - 例如總額 35 元平分：
+     * consumer_id: 1 拿到 18 元
+     * consumer_id: 2 拿到 17 元
+
+【範例參考】
+輸入：「午餐麥當勞 120，老婆代付」
+輸出：
+{
+    \"items\": [
+        {\"notes\": \"午餐麥當勞\", \"amount\": 60, \"payer_id\": 2, \"consumer_id\": 1, \"is_split\": true},
+        {\"notes\": \"午餐麥當勞\", \"amount\": 60, \"payer_id\": 2, \"consumer_id\": 2, \"is_split\": true}
+    ]
+}
+
+輸入：「晚餐 35，平分」
+輸出：
+{
+    \"items\": [
+        {\"notes\": \"晚餐\", \"amount\": 18, \"payer_id\": 1, \"consumer_id\": 1, \"is_split\": true},
+        {\"notes\": \"晚餐\", \"amount\": 17, \"payer_id\": 1, \"consumer_id\": 2, \"is_split\": true}
+    ]
+}
 
 【輸出格式】
-必須嚴格僅回傳 JSON 物件：
-{
-    \"amount\": 120,
-    \"notes\": \"午餐麥當勞\",
-    \"other_account\": 0
-}
-若無法找到金額，請回傳 null。不要包含額外文字或 Markdown 標籤。";
+必須嚴格僅回傳 JSON 物件，格式如：{\"items\": [...]}。不要附加任何 Markdown Fences 或額外說明文字。";
 
             $response = Http::withToken($apiKey)
                 ->timeout(10)
@@ -377,7 +434,9 @@ class ExpenseController extends Controller
             if ($response->successful()) {
                 $data = $response->json();
                 $rawContent = $data['choices'][0]['message']['content'] ?? '{}';
-                return json_decode($rawContent, true);
+                $result = json_decode($rawContent, true);
+
+                return $result['items'] ?? [];
             } else {
                 Log::error('Groq API Error: ' . $response->body());
             }

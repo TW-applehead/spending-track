@@ -11,9 +11,12 @@ class Expense extends Model
 
     protected $fillable = [
         'amount',
+        'payer_id',
+        'consumer_id',
         'account_id',
         'is_expense',
         'other_account',
+        'split_group_id',
         'expense_time',
         'notes',
     ];
