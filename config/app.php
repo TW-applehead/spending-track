@@ -123,4 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'main_user' => env('MAIN_USER', 1),
+    'sub_user' => env('SUB_USER', 2),
 ];

@@ -14,16 +14,15 @@ class ExpenseController extends Controller
 {
     public function index()
     {
-        $expenses = Expense::with('account')->where('expense_time', now()->format('Ym'))->get();
         $accounts = Account::all();
 
         $months = [
-            now()->subMonth(1)->format('Ym'),
+            now()->subMonth()->format('Ym'),
             now()->format('Ym'),
-            now()->addMonth(1)->format('Ym')
+            now()->addMonth()->format('Ym')
         ];
 
-        return view('welcome', compact('accounts', 'expenses', 'months'));
+        return view('welcome', compact('accounts', 'months'));
     }
 
     public function store(Request $request)

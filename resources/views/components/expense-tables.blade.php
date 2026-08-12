@@ -55,8 +55,10 @@
 
     @foreach($accounts as $account)
     <div class="col-md-6 mt-3">
-        {{ $account->name }} : <span style="color: {{ $account->quota >= 0 ? 'green' : 'red' }};">{{ abs($account->quota) }}</span>
+        {{ $account->name }} : <span style="color: {{ $account->quota >= 0 ? 'green' : 'red' }};">${{ number_format(abs($account->quota)) }}</span>
         {{ $account->balance_difference ? '' : ' (尚無下個月餘額)' }}
+        <br>
+        漂代付 : <span style="{{ $account->sub_paid_for_main_balance >= 0 ? 'color: red;' : '' }}">${{ number_format($account->sub_paid_for_main_balance) }}</span>
     </div>
     @endforeach
 

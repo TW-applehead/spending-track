@@ -17,22 +17,43 @@ class ExpenseTables extends Component
      */
     public function __construct($time)
     {
-        $this->accounts = Account::withSum(['expenses as expense_sum' => function ($query) use ($time) {
+        $main_user = config('app.main_user');
+        $sub_user = config('app.sub_user');
+        $this->accounts = Account::withSum(['expenses as expense_sum' => function ($query) use ($time, $main_user) {
+                                    // main user 花費總額
                                     $query->where('is_expense', 1)
                                         ->where('other_account', 0)
+                                        ->where('consumer_id', $main_user)
                                         ->where('expense_time', $time);
                                 }], 'amount')
-                                ->withSum(['expenses as income_sum' => function ($query) use ($time) {
+                                ->withSum(['expenses as income_sum' => function ($query) use ($time, $main_user) {
+                                    // main user 收入總額
                                     $query->where('is_expense', 0)
                                         ->where('other_account', 0)
+                                        ->where('consumer_id', $main_user)
                                         ->where('expense_time', $time);
                                 }], 'amount')
-                                ->with(['expenses' => function ($query) use ($time) {
-                                    $query->where('expense_time', $time);
+                                ->withSum(['expenses as sub_paid_for_main_sum' => function ($query) use ($time, $main_user, $sub_user) {
+                                    // sub user 代付總額
+                                    $query->where('is_expense', 1)
+                                        ->where('payer_id', $sub_user)
+                                        ->where('consumer_id', $main_user)
+                                        ->where('expense_time', $time);
+                                }], 'amount')
+                                ->withSum(['expenses as main_paid_for_sub_sum' => function ($query) use ($time, $main_user, $sub_user) {
+                                    // main user 代付 sub user 總額
+                                    $query->where('is_expense', 1)
+                                        ->where('payer_id', $main_user)
+                                        ->where('consumer_id', $sub_user)
+                                        ->where('expense_time', $time);
+                                }], 'amount')
+                                ->with(['expenses' => function ($query) use ($time, $main_user) {
+                                    $query->where('expense_time', $time)
+                                        ->where('consumer_id', $main_user);
                                 }])
                                 ->get();
 
-        // 個帳戶代收付總額
+        // 各帳戶代收付總額
         $food_behalf_income = Expense::where('is_expense', 0)
                                     ->where('other_account', 1)
                                     ->where('expense_time', $time)
@@ -55,6 +76,8 @@ class ExpenseTables extends Component
         $this->accounts = $this->accounts->map(function ($account) use ($food_behalf_sum, $entertain_behalf_sum, $time) {
             $expense_sum = $account->expense_sum ?? 0;
             $income_sum = $account->income_sum ?? 0;
+            $account->sub_paid_for_main_balance = ($account->sub_paid_for_main_sum ?? 0) - ($account->main_paid_for_sub_sum ?? 0);
+
             // 取當月餘額
             $account_balance = Account::find($account->id)
                                         ->balances()

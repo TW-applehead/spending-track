@@ -10,14 +10,17 @@
         </div>
     @endif
 
-    <div class="text-center fs-3 fw-bold my-3">記帳系統 2.0</div>
+    <div class="text-center fs-3 fw-bold mt-3">記帳系統 2.0</div>
+    <div class="text-center mt-1 mb-3">
+        只手動記<span class="fw-bold">現金交易</span>、<span class="fw-bold">非台銀匯款</span>與 漂代付
+    </div>
     <div class="text-end mb-3">
         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">
             匯入信用卡帳單
         </button>
     </div>
 
-    <form action="{{ route('expense.store') }}" method="POST">
+    <form action="{{ route('expense.store') }}" method="POST" class="d-none">
         @csrf
         <div class="row">
             <!-- 金額輸入框 -->
