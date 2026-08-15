@@ -28,8 +28,9 @@
                             <div>{{ $expense->notes }}{{ $expense->payer_id == 2 ? ' (漂付)' : '' }}</div>
                         </td>
                         <td class="align-content-center">
-                            <button class="btn btn-dark btn-sm btn-edit-record" data-target="#record-modal" data-toggle="modal" data-account-id="{{ $account->id }}"
-                                    data-id="{{ $expense->id }}" data-amount="{{ $expense->amount }}" data-other-account="{{ $expense->other_account }}" data-is-expense="{{ $expense->is_expense }}" data-notes="{{ $expense->notes }}">
+                            <button class="btn btn-dark btn-sm btn-edit-record" data-target="#record-modal" data-toggle="modal"
+                                    data-account-id="{{ $account->id }}" data-id="{{ $expense->id }}" data-amount="{{ $expense->amount }}"
+                                    data-consumer-id="{{ $expense->consumer_id }}" data-is-expense="{{ $expense->is_expense }}" data-notes="{{ $expense->notes }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
                                     <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
                                     <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
@@ -82,8 +83,9 @@
                         <div>{{ $sub_user_expense->notes }}{{ $sub_user_expense->payer_id == 1 ? ' (我付)' : '' }}</div>
                     </td>
                     <td class="align-content-center">
-                        <button class="btn btn-dark btn-sm btn-edit-record" data-target="#record-modal" data-toggle="modal" data-account-id="{{ $account->id }}"
-                                data-id="{{ $sub_user_expense->id }}" data-amount="{{ $sub_user_expense->amount }}" data-other-account="{{ $expense->other_account }}" data-is-expense="{{ $expense->is_expense }}" data-notes="{{ $expense->notes }}">
+                        <button class="btn btn-dark btn-sm btn-edit-record" data-target="#record-modal" data-toggle="modal"
+                                    data-account-id="{{ $sub_user_expense->account_id }}" data-id="{{ $sub_user_expense->id }}" data-amount="{{ $sub_user_expense->amount }}"
+                                    data-consumer-id="{{ $sub_user_expense->consumer_id }}" data-is-expense="{{ $sub_user_expense->is_expense }}" data-notes="{{ $sub_user_expense->notes }}">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
                                 <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
                                 <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
@@ -134,18 +136,14 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label d-block">是否為代付</label>
+                            <label class="form-label d-block">應付人</label>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" id="otherAccountNo" name="other_account" value="0">
-                                <label class="form-check-label" for="otherAccountNo">否</label>
+                                <input class="form-check-input" type="radio" id="consumerMain" name="consumer_id" value="1">
+                                <label class="form-check-label" for="consumerMain">我</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" id="otherAccountYes1" name="other_account" value="1">
-                                <label class="form-check-label" for="otherAccountYes1">是 (飲食代付)</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" id="otherAccountYes2" name="other_account" value="2">
-                                <label class="form-check-label" for="otherAccountYes2">是 (娛樂代付)</label>
+                                <input class="form-check-input" type="radio" id="consumerSub" name="consumer_id" value="2">
+                                <label class="form-check-label" for="consumerSub">漂</label>
                             </div>
                         </div>
 
@@ -210,7 +208,7 @@ $(document).ready(function() {
         let accountId = $(this).data('account-id');
         let amount = $(this).data('amount');
         let isExpense = $(this).data('is-expense');
-        let otherAccount = $(this).data('other-account');
+        let consumerId = $(this).data('consumer-id');
         let notes = $(this).data('notes');
 
         // 填充表單欄位
@@ -218,10 +216,8 @@ $(document).ready(function() {
         $('#editAmount').val(amount);
         $('#editNotes').val(notes);
         $('input[name="account_id"][value="' + accountId + '"]').prop('checked', true);
-        $('input[name="other_account"][value="' + otherAccount + '"]').prop('checked', true);
+        $('input[name="consumer_id"][value="' + consumerId + '"]').prop('checked', true);
         $('input[name="is_expense"][value="' + isExpense + '"]').prop('checked', true);
-        $('div[class*="otherAccount"]').show();
-        $('.otherAccountYes' + accountId).hide();
 
         $('#record-modal').modal('show');
     });
