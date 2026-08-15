@@ -11,7 +11,7 @@ use Carbon\Carbon;
 
 class ExpenseTables extends Component
 {
-    public $accounts;
+    public $accounts, $sub_user_expenses;
     /**
      * Create a new component instance.
      */
@@ -106,6 +106,12 @@ class ExpenseTables extends Component
             }
             return $account;
         });
+
+        $this->sub_user_expenses = Expense::where('is_expense', 1)
+                                        // ->where('payer_id', $sub_user)
+                                        ->where('consumer_id', $sub_user)
+                                        ->where('expense_time', $time)
+                                        ->get();
     }
 
     /**
@@ -113,6 +119,9 @@ class ExpenseTables extends Component
      */
     public function render(): View|Closure|string
     {
-        return view('components.expense-tables', ['accounts' => $this->accounts]);
+        return view('components.expense-tables', [
+            'accounts' => $this->accounts,
+            'sub_user_expenses' => $this->sub_user_expenses,
+            ]);
     }
 }

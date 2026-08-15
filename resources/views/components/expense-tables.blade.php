@@ -1,6 +1,6 @@
 <div class="row expense-tables">
     @foreach($accounts as $account)
-    <div class="col-12 col-lg-6 p-0 text-center">
+    <div class="col-12 col-lg-6 px-lg-3 px-0 mt-4 text-center">
         <div class="position-relative d-flex justify-content-center align-items-center py-2 rounded-top">
             <div class="fw-bold">{{ $account->name }}帳戶</div>
             <button type="button" class="btn btn-secondary btn-sm position-absolute end-0 me-2 btn-quick-input"
@@ -11,7 +11,7 @@
                 快速輸入
             </button>
         </div>
-        <table class="w-100 table table-striped">
+        <table class="w-100 table table-striped mb-0">
             <thead>
                 <tr>
                     <th style="width: 85px;" class="text-start">金額</th>
@@ -25,7 +25,7 @@
                     <tr>
                         <td class="text-start align-content-center" style="color: {{ $expense->is_expense ? 'red' : 'green'}};">${{ number_format($expense->amount) }}</td>
                         <td class="text-start notes-div">
-                            <div>{{ $expense->notes }}</div>
+                            <div>{{ $expense->notes }}{{ $expense->payer_id == 2 ? ' (漂付)' : '' }}</div>
                         </td>
                         <td class="align-content-center">
                             <button class="btn btn-dark btn-sm btn-edit-record" data-target="#record-modal" data-toggle="modal" data-account-id="{{ $account->id }}"
@@ -49,18 +49,62 @@
                 </tr>
                 @endif
             </tbody>
+            <tfoot>
+                <tr>
+                    <td class="text-start pt-3 pb-4" colspan="3">
+                        總花費 : <span style="color: {{ $account->quota >= 0 ? 'green' : 'red' }};">${{ number_format(abs($account->quota)) }}</span>
+                        <br>
+                        漂代付 : <span style="{{ $account->sub_paid_for_main_balance >= 0 ? 'color: red;' : '' }}">${{ number_format($account->sub_paid_for_main_balance) }}</span>
+                    </td>
+                </tr>
+            </tfoot>
         </table>
     </div>
     @endforeach
-
-    @foreach($accounts as $account)
-    <div class="col-md-6 mt-3">
-        {{ $account->name }} : <span style="color: {{ $account->quota >= 0 ? 'green' : 'red' }};">${{ number_format(abs($account->quota)) }}</span>
-        {{ $account->balance_difference ? '' : ' (尚無下個月餘額)' }}
-        <br>
-        漂代付 : <span style="{{ $account->sub_paid_for_main_balance >= 0 ? 'color: red;' : '' }}">${{ number_format($account->sub_paid_for_main_balance) }}</span>
+    <div class="col-12 col-lg-6 px-lg-3 px-0 mx-auto mt-4 mb-5 text-center">
+        <div class="position-relative d-flex justify-content-center align-items-center py-2 rounded-top">
+            <div class="fw-bold">漂代付紀錄</div>
+        </div>
+        <table class="w-100 table table-striped mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 85px;" class="text-start">金額</th>
+                    <th class="text-start notes-div">說明</th>
+                    <th>動作</th>
+                </tr>
+            </thead>
+            <tbody>
+            @if(count($sub_user_expenses) > 0)
+                @foreach ($sub_user_expenses as $sub_user_expense)
+                <tr>
+                    <td class="text-start align-content-center" style="color: {{ $sub_user_expense->is_expense ? 'red' : 'green'}};">${{ number_format($sub_user_expense->amount) }}</td>
+                    <td class="text-start notes-div">
+                        <div>{{ $sub_user_expense->notes }}{{ $sub_user_expense->payer_id == 1 ? ' (我付)' : '' }}</div>
+                    </td>
+                    <td class="align-content-center">
+                        <button class="btn btn-dark btn-sm btn-edit-record" data-target="#record-modal" data-toggle="modal" data-account-id="{{ $account->id }}"
+                                data-id="{{ $sub_user_expense->id }}" data-amount="{{ $sub_user_expense->amount }}" data-other-account="{{ $expense->other_account }}" data-is-expense="{{ $expense->is_expense }}" data-notes="{{ $expense->notes }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                                <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                                <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-danger btn-sm btn-del-record" data-id="{{ $sub_user_expense->id }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                                <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+                @endforeach
+            @else
+                <tr>
+                    <td colspan="4" class="text-center">尚無紀錄</td>
+                </tr>
+            @endif
+            </tbody>
+        </table>
     </div>
-    @endforeach
 
     <div id="record-modal" class="modal fade" tabindex="-1" aria-labelledby="recordModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -74,7 +118,7 @@
                         @csrf
                         <div class="mb-3">
                             <label for="editAmount" class="form-label">金額</label>
-                            <input type="number" class="form-control" id="editAmount" name="amount">
+                            <input type="text" inputmode="decimal" class="form-control" id="editAmount" name="amount">
                         </div>
 
                         <div class="mb-3">
@@ -132,7 +176,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="wordsModal" tabindex="-1" aria-labelledby="wordsModalLabel" aria-hidden="true">
+    <div id="wordsModal" class="modal fade" tabindex="-1" aria-labelledby="wordsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <form action="{{ route('expense.quick-store') }}" method="POST">
@@ -229,6 +273,26 @@ $(document).ready(function() {
                 console.error(errors.responseJSON.message);
             }
         });
+    });
+
+    $('#editAmount').on('change', function() {
+        let inputVal = $(this).val().trim();
+
+        if (/[+\-*/]/.test(inputVal)) {
+            try {
+                let sanitizedVal = inputVal.replace(/[^0-9.+\-*/()]/g, '');
+
+                if (sanitizedVal) {
+                    let result = new Function('"use strict"; return (' + sanitizedVal + ')')();
+
+                    if (!isNaN(result) && isFinite(result)) {
+                        $(this).val(Math.round(result));
+                    }
+                }
+            } catch (e) {
+                console.warn('無效的計算公式:', inputVal);
+            }
+        }
     });
 });
 </script>

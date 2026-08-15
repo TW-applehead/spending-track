@@ -20,7 +20,28 @@
         </button>
     </div>
 
-    <form action="{{ route('expense.store') }}" method="POST" class="d-none">
+    <div class="bg-white shadow-sm rounded px-3 mt-5">
+        <div class="pt-4">
+            <input
+                type="text"
+                class="form-control w-auto"
+                id="expense-tables-time"
+                name="expense-tables-time"
+                value="{{ request('expense-tables-time', now()->format('Ym')) }}"
+                placeholder="YYYYMM"
+                maxlength="6"
+            >
+        </div>
+        <div class="expense-tables">
+            <x-expense-tables :time="now()->format('Ym')" />
+        </div>
+    </div>
+
+    <div class="row my-5 d-none">
+        <a href="{{ route('accounts.index') }}">修改帳戶扣打</a>
+    </div>
+
+    <form action="{{ route('expense.store') }}" method="POST" class=" my-5">
         @csrf
         <div class="row">
             <!-- 金額輸入框 -->
@@ -94,25 +115,6 @@
             </div>
         </div>
     </form>
-
-    <div class="bg-white shadow-sm rounded p-3 mt-5">
-        <input
-            type="text"
-            class="form-control w-auto mb-3"
-            id="expense-tables-time"
-            name="expense-tables-time"
-            value="{{ request('expense-tables-time', now()->format('Ym')) }}"
-            placeholder="YYYYMM"
-            maxlength="6"
-        >
-        <div class="expense-tables">
-            <x-expense-tables :time="now()->format('Ym')" />
-        </div>
-    </div>
-
-    <div class="row my-5">
-        <a href="{{ route('accounts.index') }}">修改帳戶扣打</a>
-    </div>
 
     <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
