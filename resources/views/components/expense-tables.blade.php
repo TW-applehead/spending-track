@@ -3,7 +3,7 @@
     <div class="col-12 col-lg-6 px-lg-3 px-0 mt-4 text-center">
         <div class="position-relative d-flex justify-content-center align-items-center py-2 rounded-top">
             <div class="fw-bold">{{ $account->name }}帳戶</div>
-            <button type="button" class="btn btn-secondary btn-sm position-absolute end-0 me-2 btn-quick-input"
+            <button type="button" class="btn btn-dark btn-sm position-absolute end-0 me-2 btn-quick-input"
                     data-bs-toggle="modal"
                     data-bs-target="#wordsModal"
                     data-account-id="{{ $account->id }}"
@@ -25,10 +25,17 @@
                     <tr>
                         <td class="text-start align-content-center" style="color: {{ $expense->is_expense ? 'red' : 'green'}};">${{ number_format($expense->amount) }}</td>
                         <td class="text-start notes-div">
-                            <div>{{ $expense->notes }}{{ $expense->payer_id == 2 ? ' (漂付)' : '' }}</div>
+                            <div>
+                                {{ $expense->notes }}
+                                @if($expense->payer_id == 2)
+                                    (漂付)
+                                @elseif($expense->payer_id == 1 && $expense->consumer_id == 2)
+                                    (代付漂)
+                                @endif
+                            </div>
                         </td>
                         <td class="align-content-center">
-                            <button class="btn btn-dark btn-sm btn-edit-record" data-target="#record-modal" data-toggle="modal"
+                            <button class="btn btn-secondary btn-sm btn-edit-record" data-target="#record-modal" data-toggle="modal"
                                     data-account-id="{{ $account->id }}" data-id="{{ $expense->id }}" data-amount="{{ $expense->amount }}"
                                     data-consumer-id="{{ $expense->consumer_id }}" data-is-expense="{{ $expense->is_expense }}" data-notes="{{ $expense->notes }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
@@ -51,6 +58,12 @@
                 @endif
             </tbody>
             <tfoot>
+                <tr>
+                    <td class="text-start pt-3 pb-4" colspan="3">
+                        <button type="submit" class="btn btn-secondary btn-sm">平分紀錄</button>
+                        <button type="button" class="btn btn-secondary btn-sm">計算金額</button>
+                    </td>
+                </tr>
                 <tr>
                     <td class="text-start pt-3 pb-4" colspan="3">
                         總花費 : <span style="color: {{ $account->quota >= 0 ? 'green' : 'red' }};">${{ number_format(abs($account->quota)) }}</span>
@@ -82,7 +95,7 @@
                         <div>{{ $sub_user_expense->notes }}{{ $sub_user_expense->payer_id == 1 ? ' (我付)' : '' }}</div>
                     </td>
                     <td class="align-content-center">
-                        <button class="btn btn-dark btn-sm btn-edit-record" data-target="#record-modal" data-toggle="modal"
+                        <button class="btn btn-secondary btn-sm btn-edit-record" data-target="#record-modal" data-toggle="modal"
                                     data-account-id="{{ $sub_user_expense->account_id }}" data-id="{{ $sub_user_expense->id }}" data-amount="{{ $sub_user_expense->amount }}"
                                     data-consumer-id="{{ $sub_user_expense->consumer_id }}" data-is-expense="{{ $sub_user_expense->is_expense }}" data-notes="{{ $sub_user_expense->notes }}">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">

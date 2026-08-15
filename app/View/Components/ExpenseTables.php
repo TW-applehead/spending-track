@@ -22,16 +22,20 @@ class ExpenseTables extends Component
         $this->accounts = Account::withSum(['expenses as expense_sum' => function ($query) use ($time, $main_user) {
                                     // main user 花費總額
                                     $query->where('is_expense', 1)
-                                        ->where('other_account', 0)
-                                        ->where('consumer_id', $main_user)
-                                        ->where('expense_time', $time);
+                                        ->where('expense_time', $time)
+                                        ->where(function ($query) use ($main_user) {
+                                            $query->where('consumer_id', $main_user)
+                                                ->orWhere('payer_id', $main_user);
+                                        });
                                 }], 'amount')
                                 ->withSum(['expenses as income_sum' => function ($query) use ($time, $main_user) {
                                     // main user 收入總額
                                     $query->where('is_expense', 0)
-                                        ->where('other_account', 0)
-                                        ->where('consumer_id', $main_user)
-                                        ->where('expense_time', $time);
+                                        ->where('expense_time', $time)
+                                        ->where(function ($query) use ($main_user) {
+                                            $query->where('consumer_id', $main_user)
+                                                ->orWhere('payer_id', $main_user);
+                                        });
                                 }], 'amount')
                                 ->withSum(['expenses as sub_paid_for_main_sum' => function ($query) use ($time, $main_user, $sub_user) {
                                     // sub user 代付總額
@@ -49,7 +53,10 @@ class ExpenseTables extends Component
                                 }], 'amount')
                                 ->with(['expenses' => function ($query) use ($time, $main_user) {
                                     $query->where('expense_time', $time)
-                                        ->where('consumer_id', $main_user);
+                                        ->where(function ($query) use ($main_user) {
+                                            $query->where('consumer_id', $main_user)
+                                                ->orWhere('payer_id', $main_user);
+                                        });
                                 }])
                                 ->get();
 
