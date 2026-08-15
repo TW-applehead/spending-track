@@ -63,9 +63,28 @@ class ExpenseController extends Controller
         return response()->json(['status' => 'success', 'response' => '花費更新成功']);
     }
 
-    public function delete(Request $request)
+    public function batchDelete(Request $request)
     {
-        Expense::find($request->id)->delete();
+        $ids = (array) $request->input('ids', $request->input('id'));
+
+        if (empty($ids)) {
+            return response()->json(['status' => 'error', 'response' => '未指定刪除項目'], 400);
+        }
+
+        $splitGroupIds = Expense::whereIn('id', $ids)
+            ->whereNotNull('split_group_id')
+            ->pluck('split_group_id')
+            ->unique()
+            ->toArray();
+
+        // 2. 批次刪除：被勾選的 ID 以及關聯相同 split_group_id 的所有紀錄
+        Expense::where(function ($query) use ($ids, $splitGroupIds) {
+            $query->whereIn('id', $ids);
+
+            if (!empty($splitGroupIds)) {
+                $query->orWhereIn('split_group_id', $splitGroupIds);
+            }
+        })->delete();
 
         return response()->json(['status' => 'success', 'response' => '刪除成功']);
     }
