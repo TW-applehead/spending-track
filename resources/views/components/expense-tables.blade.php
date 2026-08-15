@@ -54,8 +54,7 @@
                 <tr>
                     <td class="text-start pt-3 pb-4" colspan="3">
                         總花費 : <span style="color: {{ $account->quota >= 0 ? 'green' : 'red' }};">${{ number_format(abs($account->quota)) }}</span>
-                        <br>
-                        漂代付 : <span style="{{ $account->sub_paid_for_main_balance >= 0 ? 'color: red;' : '' }}">${{ number_format($account->sub_paid_for_main_balance) }}</span>
+                        <span class="ms-1">(漂代付 : <span style="{{ $account->sub_paid_for_main_balance > 0 ? 'color: red;' : '' }}">${{ number_format($account->sub_paid_for_main_balance) }}</span>)</span>
                     </td>
                 </tr>
             </tfoot>

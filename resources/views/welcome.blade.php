@@ -14,13 +14,13 @@
     <div class="text-center mt-1 mb-3">
         只手動記<span class="fw-bold">現金交易</span>、<span class="fw-bold">非台銀匯款</span>與 漂代付
     </div>
-    <div class="text-end mb-3">
+    <div class="text-end mb-4">
         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">
             匯入信用卡帳單
         </button>
     </div>
 
-    <div class="bg-white shadow-sm rounded px-3 mt-5">
+    <div class="bg-white shadow-sm rounded px-3">
         <div class="pt-4">
             <input
                 type="text"
