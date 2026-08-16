@@ -10,8 +10,9 @@ Route::prefix('expense')->group(function () {
     Route::post('/update', 'App\Http\Controllers\ExpenseController@update')->name('expense.update');
     Route::post('/batch-delete', 'App\Http\Controllers\ExpenseController@batchDelete')->name('expense.batch-delete');
     Route::post('/import', 'App\Http\Controllers\ExpenseController@import')->name('expense.import');
-    Route::post('/expenses/quick-store', 'App\Http\Controllers\ExpenseController@quickStore')->name('expense.quick-store');
+    Route::post('/quick-store', 'App\Http\Controllers\ExpenseController@quickStore')->name('expense.quick-store');
     Route::get('/tables', 'App\Http\Controllers\ExpenseController@getExpenseTable')->name('expense.tables');
+    Route::post('/split', 'App\Http\Controllers\ExpenseController@split')->name('expense.split');
 });
 
 Route::prefix('account')->group(function () {

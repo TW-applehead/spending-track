@@ -56,7 +56,7 @@
             <tfoot>
                 <tr style="border-bottom-color: transparent;">
                     <td class="text-start pt-3 pb-4" colspan="3">
-                        <button type="button" class="btn btn-secondary btn-sm me-1">平分紀錄</button>
+                        <button type="button" class="btn btn-secondary btn-sm me-1 btn-split-records">平分紀錄</button>
                         <button type="button" class="btn btn-secondary btn-sm me-1">計算金額</button>
                         <button type="button" class="btn btn-danger btn-sm me-1 btn-batch-delete">刪除</button>
                     </td>
@@ -210,6 +210,35 @@ $(document).ready(function() {
         $('#targetAccountName').text(accountName + '帳戶');
 
         $('#wordsModal').modal('show');
+    });
+
+    $('.btn-split-records').on('click', function() {
+        let selectedIds = $('.record-checkbox:checked').map(function() {
+            return $(this).val();
+        }).get();
+
+        if (selectedIds.length === 0) {
+            alert("請先勾選要平分的紀錄！");
+            return;
+        }
+
+        if (confirm(`確定要將選取的 ${selectedIds.length} 筆紀錄進行平分嗎？`)) {
+            $.ajax({
+                url: "{{ route('expense.split') }}",
+                type: 'POST',
+                data: {
+                    ids: selectedIds,
+                    _token: $('input[name="_token"]').val(),
+                },
+                success: function(response) {
+                    alert(response.response);
+                    location.reload();
+                },
+                error: function(errors) {
+                    console.error(errors.responseJSON ? errors.responseJSON.message : errors);
+                }
+            });
+        }
     });
 
     $('.btn-batch-delete').on('click', function() {

@@ -63,6 +63,49 @@ class ExpenseController extends Controller
         return response()->json(['status' => 'success', 'response' => '花費更新成功']);
     }
 
+    public function split(Request $request)
+    {
+        $ids = (array) $request->input('ids');
+
+        if (empty($ids)) {
+            return response()->json(['status' => 'error', 'response' => '未指定拆分項目'], 400);
+        }
+
+        DB::transaction(function () use ($ids) {
+            $expenses = Expense::whereIn('id', $ids)->get();
+
+            foreach ($expenses as $expense) {
+                $originalAmount = $expense->amount;
+
+                // 計算拆分金額：奇數時 ceil 會多 1 元給 consumer_id = 1
+                $amount1 = (int) ceil($originalAmount / 2);
+                $amount2 = (int) floor($originalAmount / 2);
+
+                // 1. 將原紀錄更新為第一筆 (consumer_id = 1)，並設自己 ID 為 split_group_id
+                $expense->update([
+                    'amount'         => $amount1,
+                    'consumer_id'    => 1,
+                    'split_group_id' => $expense->id,
+                ]);
+
+                // 2. 複製原紀錄屬性建立第二筆 (consumer_id = 2)，綁定同一個 split_group_id
+                Expense::create([
+                    'account_id'     => $expense->account_id,
+                    'payer_id'       => $expense->payer_id,
+                    'consumer_id'    => 2,
+                    'amount'         => $amount2,
+                    'is_expense'     => $expense->is_expense,
+                    'other_account'  => $expense->other_account,
+                    'expense_time'   => $expense->expense_time,
+                    'notes'          => $expense->notes,
+                    'split_group_id' => $expense->id,
+                ]);
+            }
+        });
+
+        return response()->json(['status' => 'success', 'response' => '成功將紀錄平分！']);
+    }
+
     public function batchDelete(Request $request)
     {
         $ids = (array) $request->input('ids', $request->input('id'));
