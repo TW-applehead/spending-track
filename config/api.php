@@ -12,6 +12,7 @@ return [
     'groq' => [
         'secret_key' => env('GROQ_API_KEY'),
         'base_url' => env('GROQ_API_URL'),
+        'model' => env('GROQ_MODEL'),
     ],
 
     'request_timeout' => env('API_REQUEST_TIMEOUT', 30),

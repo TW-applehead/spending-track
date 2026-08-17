@@ -483,7 +483,7 @@ class ExpenseController extends Controller
             $response = Http::withToken($apiKey)
                 ->timeout(10)
                 ->post(config('api.groq.base_url'), [
-                    'model' => 'llama-3.3-70b-versatile',
+                    'model' => config('api.groq.model'),
                     'messages' => [
                         ['role' => 'system', 'content' => $systemPrompt],
                         ['role' => 'user', 'content' => "待分析文字：" . $rawText]
