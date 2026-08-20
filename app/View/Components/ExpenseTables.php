@@ -56,7 +56,9 @@ class ExpenseTables extends Component
                                         ->where(function ($query) use ($main_user) {
                                             $query->where('consumer_id', $main_user)
                                                 ->orWhere('payer_id', $main_user);
-                                        });
+                                        })
+                                        ->orderByRaw('COALESCE(split_group_id, id) ASC')
+                                        ->orderBy('id', 'ASC');
                                 }])
                                 ->get();
 
