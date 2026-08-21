@@ -138,32 +138,6 @@
             </div>
         </div>
     </div>
-
-    <div id="wordsModal" class="modal fade" tabindex="-1" aria-labelledby="wordsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <form action="{{ route('expense.quick-store') }}" method="POST">
-                    @csrf
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="wordsModalLabel">快速輸入 - <span id="targetAccountName" class="text-primary fw-bold"></span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- 隱藏欄位：儲存當前的帳戶 ID -->
-                        <input type="hidden" name="account_id" id="quickAccountId">
-
-                        <div class="mb-3">
-                            <textarea class="form-control" id="quickRawText" name="raw_text" rows="3" placeholder="例如：午餐麥當勞 180、遊戲王 $1000" required></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                        <button type="submit" class="btn btn-primary">新增</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -232,7 +206,9 @@ $(document).ready(function() {
                 },
                 success: function(response) {
                     alert(response.response);
-                    location.reload();
+
+                    var time = $('#expense-tables-time').val();
+                    window.location.href = "{{ url('/') }}?expense_time=" + encodeURIComponent(time);
                 },
                 error: function(errors) {
                     console.error(errors.responseJSON ? errors.responseJSON.message : errors);
@@ -261,7 +237,9 @@ $(document).ready(function() {
                 },
                 success: function(response) {
                     alert(response.response);
-                    location.reload();
+
+                    var time = $('#expense-tables-time').val();
+                    window.location.href = "{{ url('/') }}?expense_time=" + encodeURIComponent(time);
                 },
                 error: function(errors) {
                     console.error(errors.responseJSON ? errors.responseJSON.message : errors);
@@ -279,7 +257,9 @@ $(document).ready(function() {
             data: formData,
             success: function(response) {
                 alert(response.response);
-                location.reload();
+
+                var time = $('#expense-tables-time').val();
+                window.location.href = "{{ url('/') }}?expense_time=" + encodeURIComponent(time);
             },
             error: function(errors) {
                 console.error(errors.responseJSON.message);
@@ -287,6 +267,7 @@ $(document).ready(function() {
         });
     });
 
+    // 編輯視窗的金額可以做加減乘除運算
     $('#editAmount').on('change', function() {
         let inputVal = $(this).val().trim();
 

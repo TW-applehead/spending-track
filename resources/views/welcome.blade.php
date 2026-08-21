@@ -27,13 +27,13 @@
                 class="form-control w-auto"
                 id="expense-tables-time"
                 name="expense-tables-time"
-                value="{{ request('expense-tables-time', now()->format('Ym')) }}"
+                value="{{ $expense_time }}"
                 placeholder="YYYYMM"
                 maxlength="6"
             >
         </div>
         <div class="expense-tables">
-            <x-expense-tables :time="now()->format('Ym')" />
+            <x-expense-tables :time="$expense_time" />
         </div>
     </div>
 
@@ -93,15 +93,7 @@
             <!-- 時間 -->
             <div class="form-group col-md-6">
                 <label for="expense_time">時間</label>
-                <select class="form-control" id="time" name="expense_time" required>
-                    @foreach($months as $month)
-                        @if($month == now()->format('Ym'))
-                            <option value="{{ $month }}" selected>{{ $month }}</option>
-                        @else
-                            <option value="{{ $month }}">{{ $month }}</option>
-                        @endif
-                    @endforeach
-                </select>
+                <input type="text" class="form-control" id="time" name="expense_time" value="{{ $expense_time }}" required>
             </div>
 
             <!-- 說明 -->
@@ -137,6 +129,33 @@
                     </div>
                 </form>
 
+            </div>
+        </div>
+    </div>
+
+    <div id="wordsModal" class="modal fade" tabindex="-1" aria-labelledby="wordsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{{ route('expense.quick-store') }}" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="wordsModalLabel">快速輸入 - <span id="targetAccountName" class="text-primary fw-bold"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- 隱藏欄位：儲存當前的帳戶 ID -->
+                        <input type="hidden" name="account_id" id="quickAccountId">
+                        <input type="hidden" name="expense_time" id="expenseTime" value="{{ $expense_time }}">
+
+                        <div class="mb-3">
+                            <textarea class="form-control" id="quickRawText" name="raw_text" rows="3" placeholder="例如：午餐麥當勞 180、遊戲王 $1000" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">新增</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

@@ -12,17 +12,12 @@ use Illuminate\Support\Facades\Log;
 
 class ExpenseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $accounts = Account::all();
+        $expense_time = $request->input('expense_time', now()->format('Ym'));
 
-        $months = [
-            now()->subMonth()->format('Ym'),
-            now()->format('Ym'),
-            now()->addMonth()->format('Ym')
-        ];
-
-        return view('welcome', compact('accounts', 'months'));
+        return view('welcome', compact('accounts', 'expense_time'));
     }
 
     public function store(Request $request)
@@ -144,6 +139,9 @@ class ExpenseController extends Controller
         return $view;
     }
 
+    /**
+     * 匯入銀行帳單紀錄
+     */
     public function import(Request $request)
     {
         $request->validate([
@@ -375,6 +373,7 @@ class ExpenseController extends Controller
         $request->validate([
             'account_id' => 'required|integer|exists:accounts,id',
             'raw_text'   => 'required|string|max:255',
+            'expense_time'   => 'nullable|string|max:6',
         ]);
 
         $parsedData = $this->parseTextWithGroq($request->raw_text);
@@ -383,7 +382,9 @@ class ExpenseController extends Controller
             return back()->with('error', '無法從輸入文字中解析出金額，請確認輸入內容（如：午餐120）');
         }
 
-        DB::transaction(function () use ($parsedData, $request) {
+        $expense_time = $request->input('expense_time', now()->format('Ym'));
+
+        DB::transaction(function () use ($parsedData, $request, $expense_time) {
             $firstExpenseId = null;
 
             foreach ($parsedData as $item) {
@@ -394,7 +395,7 @@ class ExpenseController extends Controller
                     'account_id'    => $request->account_id,
                     'is_expense'    => 1,
                     'other_account' => 0,
-                    'expense_time'  => now()->format('Ym'),
+                    'expense_time'  => $expense_time,
                     'notes'         => $item['notes'] ?? $request->raw_text,
                 ]);
 
@@ -420,7 +421,10 @@ class ExpenseController extends Controller
             $success_message .= "（總金額 $" . $totalAmount . " 拆分為 $" . $amountStr . ")";
         }
 
-        return back()->with('success', $success_message);
+        return back()->with([
+            'success' => $success_message,
+            'expense_time' => $expense_time,
+        ]);
     }
 
     /**

@@ -15,7 +15,7 @@ class ExpenseTables extends Component
     /**
      * Create a new component instance.
      */
-    public function __construct($time)
+    public function __construct(string $time)
     {
         $main_user = config('app.main_user');
         $sub_user = config('app.sub_user');
