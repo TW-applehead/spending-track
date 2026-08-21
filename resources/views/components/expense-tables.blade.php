@@ -1,6 +1,6 @@
 <div class="row expense-tables">
     @foreach($accounts as $account)
-    <div class="col-12 col-lg-6 px-lg-3 px-0 mt-4 text-center">
+    <div class="col-12 col-lg-6 px-lg-3 px-0 text-center">
         <div class="position-relative d-flex justify-content-center align-items-center py-2 rounded-top">
             <div class="fw-bold">{{ $account->name }}帳戶</div>
             <button type="button" class="btn btn-dark btn-sm position-absolute end-0 me-2 btn-quick-input"
@@ -11,7 +11,7 @@
                 快速輸入
             </button>
         </div>
-        <table class="w-100 table table-striped mb-0">
+        <table class="w-100 table table-striped {{ $account->id == 1 ? 'border-bottom mb-4' : 'mb-0' }}">
             <thead>
                 <tr>
                     <th style="width: 40px;" class="text-center">
@@ -62,7 +62,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="text-end pt-3 pb-4" colspan="3">
+                    <td class="text-end pt-3 pb-4 border-0" colspan="3">
                         總花費 : <span style="color: {{ $account->quota >= 0 ? 'green' : 'red' }};">${{ number_format(abs($account->quota)) }}</span>
                         <br>
                         (漂代付 : <span style="{{ $account->sub_paid_for_main_balance > 0 ? 'color: red;' : '' }}">${{ number_format($account->sub_paid_for_main_balance) }}</span>)
@@ -85,7 +85,7 @@
                         @csrf
                         <div class="mb-3">
                             <label for="editAmount" class="form-label">金額</label>
-                            <input type="text" inputmode="decimal" class="form-control" id="editAmount" name="amount">
+                            <input type="text" class="form-control" id="editAmount" name="amount">
                         </div>
 
                         <div class="mb-3">

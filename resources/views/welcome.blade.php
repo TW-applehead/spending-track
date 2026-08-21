@@ -21,7 +21,7 @@
     </div>
 
     <div class="bg-white shadow-sm rounded px-3">
-        <div class="pt-4">
+        <div class="py-4">
             <input
                 type="text"
                 class="form-control w-auto"
