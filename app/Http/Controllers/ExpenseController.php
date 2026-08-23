@@ -51,6 +51,7 @@ class ExpenseController extends Controller
         $expense->amount = $request->amount;
         $expense->is_expense = $request->is_expense;
         $expense->consumer_id = $request->consumer_id;
+        $expense->payer_id = $request->payer_id;
         $expense->notes = $request->notes;
         $expense->updated_at = now();
         $expense->save();

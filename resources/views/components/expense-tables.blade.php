@@ -29,9 +29,9 @@
                             <input type="checkbox" class="form-check-input record-checkbox" value="{{ $expense->id }}">
                         </td>
                         <td class="text-start align-content-center notes-div btn-edit-record" style="cursor: pointer;"
-                            data-target="#record-modal" data-toggle="modal"
-                            data-account-id="{{ $account->id }}" data-id="{{ $expense->id }}"
-                            data-amount="{{ $expense->amount }}" data-consumer-id="{{ $expense->consumer_id }}"
+                            data-target="#record-modal" data-toggle="modal" data-id="{{ $expense->id }}"
+                            data-account-id="{{ $account->id }}" data-amount="{{ $expense->amount }}"
+                            data-consumer-id="{{ $expense->consumer_id }}" data-payer-id="{{ $expense->payer_id }}"
                             data-is-expense="{{ $expense->is_expense }}" data-notes="{{ $expense->notes }}">
                             <div>
                                 {{ $expense->notes }}
@@ -113,6 +113,18 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label d-block">實付人</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="payerMain" name="payer_id" value="1">
+                                <label class="form-check-label" for="payerMain">我</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="payerSub" name="payer_id" value="2">
+                                <label class="form-check-label" for="payerSub">漂</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label d-block">是否為費用</label>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" id="isExpenseYes" name="is_expense" value="1">
@@ -163,6 +175,7 @@ $(document).ready(function() {
         let amount = $(this).data('amount');
         let isExpense = $(this).data('is-expense');
         let consumerId = $(this).data('consumer-id');
+        let payerId = $(this).data('payer-id');
         let notes = $(this).data('notes');
 
         // 填充表單欄位
@@ -171,6 +184,7 @@ $(document).ready(function() {
         $('#editNotes').val(notes);
         $('input[name="account_id"][value="' + accountId + '"]').prop('checked', true);
         $('input[name="consumer_id"][value="' + consumerId + '"]').prop('checked', true);
+        $('input[name="payer_id"][value="' + payerId + '"]').prop('checked', true);
         $('input[name="is_expense"][value="' + isExpense + '"]').prop('checked', true);
 
         $('#record-modal').modal('show');
